@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Ajouter Candidat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #fafafa;
+      color: #333;
+    }
+    header {
+      background-color: #D63138;
+      padding: 15px;
+      text-align: center;
+      color: white;
+    }
+    header img {
+      height: 60px;
+      display: block;
+      margin: 0 auto 10px auto;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin: 10px 0;
+    }
+    #message {
+      font-size: 1.4em;
+      text-align: center;
+      margin: 20px;
+    }
+    form {
+      font-size: 1.3em;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    input[type="text"], input[type="email"] {
+      font-size: 1.1em;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 100%;
+    }
+    input[type="submit"] {
+      font-size: 1.3em;
+      padding: 12px;
+      background-color: #D63138;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    input[type="submit"]:hover {
+      background-color: #b0282e;
+    }
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #D63138;
+      color: white;
+      padding: 15px 0;
+      text-align: center;
+      font-size: 1.5em;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+    }
+    .footer a {
+      margin: 0 30px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+  <script>
+    async function addCandidate(event){
+      event.preventDefault();
+      let formData = new FormData(document.getElementById('candidateForm'));
+      let data = Object.fromEntries(formData.entries());
+      let response = await fetch('/add_candidate', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      let result = await response.json();
+      let messageDiv = document.getElementById('message');
+      if(result.success){
+        messageDiv.style.color='green';
+        messageDiv.textContent = `Candidat ajouté avec succès ! Numéro : ${result.number}`;
+        document.getElementById('candidateForm').reset();
+      }else{
+        messageDiv.style.color='red';
+        messageDiv.textContent = result.error;
+      }
+    }
+  </script>
+</head>
+<body>
+  <header>
+    <img src="{{ url_for('static', filename='arenaform-logo.png') }}" alt="Arenaform Logo">
+    <h1>Ajouter un candidat</h1>
+  </header>
+
+  <div id="message"></div>
+
+  <form id="candidateForm" onsubmit="addCandidate(event)">
+    <label>Prénom:
+      <input type="text" name="first_name" required>
+    </label>
+    <label>Nom:
+      <input type="text" name="last_name" required>
+    </label>
+    <label>Email:
+      <input type="email" name="email" required>
+    </label>
+    <label>Téléphone:
+      <input type="text" name="phone" required>
+    </label>
+    <input type="submit" value="Ajouter">
+  </form>
+  
+ <!-- Bouton export Excel -->
+<div style="text-align:center; margin-top:20px;">
+    <a href="/export_excel" style="
+        font-size:1.8em;
+        padding:12px 20px;
+        background-color:green;
+        color:white;
+        text-decoration:none;
+        border-radius:5px;
+        display:inline-block;
+    ">📥 Export Excel</a>
+</div>
+
+  <div class="footer">
+    <a href="/chrono">⏱ Aller au chrono</a>
+    <a href="/results">🏆 Aller aux résultats!</a>
+  </div>
+</body>
+</html>

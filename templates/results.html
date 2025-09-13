@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Résultats - Arenaform</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      color: #222;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    header {
+      background: #D63138;
+      color: white;
+      padding: 20px;
+    }
+    header img {
+      height: 80px;
+      vertical-align: middle;
+      margin-right: 20px;
+    }
+	header h1 {
+	display: inline-block;
+	font-size: 3em;
+	margin: 0;
+	vertical-align: middle;
+	}
+	h2 {
+	font-size: 2em;
+	margin-top: 40px;
+	color: #D63138;
+	}
+	h3 {
+	font-size: 1.6em;
+	margin-top: 30px;
+	color: #444;
+	}
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 80%;
+      font-size: 1.5em;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 15px 20px;
+    }
+    th {
+      background: #D63138;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background: #f2f2f2;
+    }
+    tr:hover {
+      background: #e6f0ff;
+    }
+	.footer {
+		position: relative; /* plus de fixed */
+		bottom: auto;
+		width: 100%;
+		background: #D63138;
+		color: white;
+		padding: 15px 0;
+		text-align: center;
+		font-size: 1.5em;
+		box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+	}
+
+    .footer a {
+      margin: 0 30px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="/static/arenaform-logo.png" alt="Arenaform Logo">
+    <h1>Résultats par circuit</h1>
+  </header>
+  {% set circuit_names = ['Ninja', 'Crossfit/Hyrox', 'Précision', 'Suspension'] %}
+  {% for i in range(1,5) %}
+    <h2>Circuit {{ circuit_names[i-1] }}</h2>
+
+    <h3>🥇🥈🥉 Meilleurs temps</h3>
+    <table>
+      <tr>
+        <th>Rang</th>
+        <th>Numéro</th>
+        <th>Nom</th>
+        <th>Prénom</th>
+		{% if i == 4 %}
+        <th>Temps</th>
+		{% endif %}
+      </tr>
+      {% for r in results[i]['best'] %}
+      <tr>
+        <td>
+          {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+        </td>
+        <td>{{ r[0] }}</td>
+        <td>{{ r[2] }}</td>
+        <td>{{ r[1] }}</td>
+		{% if i == 4 %}
+		  <td>{{ r[3] }}</td>
+		{% endif %}
+      </tr>
+      {% endfor %}
+    </table>
+
+    <h3>Derniers temps enregistrés</h3>
+    <table>
+      <tr>
+        <th>Numéro</th>
+        <th>Nom</th>
+        <th>Prénom</th>
+        <th>Temps</th>
+		{% if i == 3 %}
+        <th>Touches</th>
+		{% endif %}
+      </tr>
+      {% for r in results[i]['last'] %}
+		<tr>
+		  <td>{{ r[0] }}</td>
+		  <td>{{ r[2] }}</td>
+		  <td>{{ r[1] }}</td>
+		  <td>{{ r[3] }}</td>
+		  {% if i == 3 %}
+		  <td>{{ r[4] }}</td>
+		  {% endif %}
+		</tr>
+
+      {% endfor %}
+    </table>
+
+  {% endfor %}
+
+  <div class="footer">
+    <a href="/chrono">⏱ Aller au chrono</a>
+    <a href="/add_candidate">➕ Ajouter un candidat</a>
+  </div>
+</body>
+</html>

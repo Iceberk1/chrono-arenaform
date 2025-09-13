@@ -11,6 +11,7 @@ DB_FILE = 'chrono_event.db'
 # --- Database setup ---
 def init_db():
     conn = sqlite3.connect(DB_FILE)
+    conn.execute("PRAGMA journal_mode=WAL;")
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS candidates (
@@ -54,6 +55,7 @@ def add_candidate():
         if not re.match(phone_pattern, data['phone']):
             return jsonify(success=False, error='Téléphone mal formaté')
         conn = sqlite3.connect(DB_FILE)
+        conn.execute("PRAGMA journal_mode=WAL;")
         c = conn.cursor()
         c.execute('SELECT COUNT(*) FROM candidates WHERE first_name=? AND last_name=?',
                   (data['first_name'], data['last_name']))
@@ -72,6 +74,7 @@ def add_candidate():
 @app.route('/chrono')
 def chrono():
     conn = sqlite3.connect(DB_FILE)
+    conn.execute("PRAGMA journal_mode=WAL;")
     c = conn.cursor()
     c.execute('SELECT number, first_name, last_name FROM candidates ORDER BY number')
     candidates = c.fetchall()
@@ -87,6 +90,7 @@ def save_time():
     touches = int(data.get('touches', 0))
 
     conn = sqlite3.connect(DB_FILE)
+    conn.execute("PRAGMA journal_mode=WAL;")
     c = conn.cursor()
     c.execute('''
         INSERT OR REPLACE INTO results (candidate_number, circuit, time, touches)
@@ -99,6 +103,8 @@ def save_time():
 @app.route('/results')
 def results():
     conn = sqlite3.connect(DB_FILE)
+    conn.execute("PRAGMA journal_mode=WAL;")
+
     c = conn.cursor()
     results_dict = {}
 
@@ -165,6 +171,7 @@ def results():
 @app.route('/export_excel')
 def export_excel():
     conn = sqlite3.connect(DB_FILE)
+    conn.execute("PRAGMA journal_mode=WAL;")
     c = conn.cursor()
 
     # Créer le classeur Excel

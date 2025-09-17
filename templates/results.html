@@ -2,7 +2,6 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="10">
   <title>Résultats - Arenaform</title>
   <style>
     body {
@@ -150,5 +149,29 @@
     <a href="/chrono">⏱ Aller au chrono</a>
     <a href="/add_candidate">➕ Ajouter un candidat</a>
   </div>
+  
+<script>
+  function autoScroll() {
+    let scrollStep = 1; // vitesse de scroll (pixels)
+    let scrollInterval = 30; // délai entre ticks (ms)
+    let timer = setInterval(function() {
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
+        clearInterval(timer);
+        // arrivé en bas -> attendre 2s puis refresh
+        setTimeout(() => { window.location.reload(); }, 5000);
+      } else {
+        window.scrollBy(0, scrollStep);
+      }
+    }, scrollInterval);
+  }
+
+  window.onload = function() {
+    // toujours commencer tout en haut
+    window.scrollTo(0, 0);
+    // attendre 5s avant de commencer à défiler
+    setTimeout(autoScroll, 5000);
+  }
+</script>
+  
 </body>
 </html>

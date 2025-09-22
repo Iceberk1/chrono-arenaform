@@ -50,7 +50,7 @@
       margin: 20px;
     }
     form {
-      font-size: 1.3em;
+      font-size: 1.2em;
       display: flex;
       flex-direction: column;
       gap: 15px;
@@ -58,18 +58,40 @@
       margin: 0 auto;
       padding: 20px;
     }
-    label {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    input[type="text"], input[type="email"] {
-      font-size: 1.1em;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      width: 100%;
-    }
+	.form-label {
+	  display: block;
+	  font-size: 1.2em;
+	  margin-bottom: 15px;
+	}
+
+	.form-label input[type="text"],
+	.form-label input[type="email"] {
+	  width: 100%;
+	  padding: 12px;
+	  font-size: 1.2em;
+	  border: 1px solid #ccc;
+	  border-radius: 8px;
+	  box-sizing: border-box;
+	  margin-top: 5px;
+	}
+
+	.checkbox-label {
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  background-color: #fafafa;
+	  padding: 12px;
+	  border: 1px solid #ccc;
+	  border-radius: 8px;
+	  cursor: pointer;
+	  margin-bottom: 20px;
+	}
+
+	.checkbox-label input[type="checkbox"] {
+	  transform: scale(1.5);
+	  margin-right: 10px;
+	}
+
     input[type="submit"] {
       font-size: 1.3em;
       padding: 12px;
@@ -105,28 +127,39 @@
       text-decoration: underline;
     }
   </style>
-  <script>
-    async function addCandidate(event){
-      event.preventDefault();
-      let formData = new FormData(document.getElementById('candidateForm'));
-      let data = Object.fromEntries(formData.entries());
-      let response = await fetch('/add_candidate', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(data)
-      });
-      let result = await response.json();
-      let messageDiv = document.getElementById('message');
-      if(result.success){
-        messageDiv.style.color='green';
-        messageDiv.textContent = `Candidat ajouté avec succès ! Numéro : ${result.number}`;
-        document.getElementById('candidateForm').reset();
-      }else{
-        messageDiv.style.color='red';
-        messageDiv.textContent = result.error;
-      }
-    }
-  </script>
+	<script>
+	async function addCandidate(event){
+	  event.preventDefault();
+	  const form = document.getElementById('candidateForm');
+	  const formData = new FormData(form);
+	  let data = Object.fromEntries(formData.entries());
+
+	  // checkbox no_contact
+	  const noContactCheckbox = document.getElementById('noContact');
+	  data.no_contact = noContactCheckbox ? noContactCheckbox.checked : false;
+
+	  const response = await fetch('/add_candidate', {
+		method: 'POST',
+		headers: {'Content-Type':'application/json'},
+		body: JSON.stringify(data)
+	  });
+
+	  const result = await response.json();
+
+	  if(result.success){
+		// rediriger vers la même page avec paramètre number
+		window.location.href = `/add_candidate?added=${result.number}`;
+	  } else {
+		const messageDiv = document.getElementById('message');
+		messageDiv.style.color = 'red';
+		messageDiv.textContent = result.error;
+	  }
+	}
+	</script>
+
+
+
+
 </head>
 	<body>
 		<header>
@@ -139,24 +172,55 @@
 			</div>
 		</header>
 
-	  <div id="message"></div>
+		<div id="message" style="color: green;">
+		  {{ message }}
+		</div>
 
-	  <form id="candidateForm" onsubmit="addCandidate(event)">
-		<label>Prénom:
-		  <input type="text" name="first_name" required>
-		</label>
-		<label>Nom:
-		  <input type="text" name="last_name" required>
-		</label>
-		<label>Email:
-		  <input type="email" name="email" required>
-		</label>
-		<label>Téléphone:
-		  <input type="text" name="phone" required>
-		</label>
-		<input type="submit" value="Ajouter">
-	  </form>
-	  
+		<form id="candidateForm" onsubmit="addCandidate(event)">
+		  <label class="form-label">Prénom :
+			<input type="text" name="first_name" required>
+		  </label>
+
+		  <label class="form-label">Nom :
+			<input type="text" name="last_name" required>
+		  </label>
+
+		  <label class="form-label checkbox-label">
+			<input type="checkbox" id="noContact">
+			Pas de mail / téléphone
+		  </label>
+
+		  <div id="contactFields">
+			<label class="form-label">Email :
+			  <input type="email" name="email" id="emailField" required>
+			</label>
+
+			<label class="form-label">Téléphone :
+			  <input type="text" name="phone" id="phoneField" required>
+			</label>
+		  </div>
+			<input type="submit" value="Ajouter">
+		</form>
+
+		<script>
+			const noContactCheckbox = document.getElementById('noContact');
+			const contactFields = document.getElementById('contactFields');
+			const emailField = document.getElementById('emailField');
+			const phoneField = document.getElementById('phoneField');
+
+			noContactCheckbox.addEventListener('change', () => {
+				if (noContactCheckbox.checked) {
+					contactFields.style.display = 'none'; // cache les champs
+					emailField.required = false;
+					phoneField.required = false;
+				} else {
+					contactFields.style.display = 'block'; // réaffiche les champs
+					emailField.required = true;
+					phoneField.required = true;
+				}
+			});
+		</script>
+			  
 	 <!-- Bouton export Excel -->
 	<div style="text-align:center; margin-top:20px;">
 		<a href="/export_excel" style="

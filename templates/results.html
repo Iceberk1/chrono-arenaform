@@ -11,6 +11,7 @@
       margin: 0;
       padding: 0;
       text-align: center;
+	  padding-top: 100px; /* hauteur approximative du header */
     }
     header {
 	  position: fixed;
@@ -70,13 +71,14 @@
 	}
 
 	h2 {
-		font-size: 2em;
-		margin-top: 40px;
+		font-size: 3em;
+		margin: 10px 0 5px 0; /* 10px au-dessus, 5px en dessous */
 		color: #D63138;
+		font-weight: bold;    /* titre en gras */
 	}
 	h3 {
 		font-size: 1.6em;
-		margin-top: 30px;
+		margin: 5px 0 5px 0; /* 5px au-dessus et en dessous */
 		color: #444;
 	}
     table {
@@ -89,7 +91,7 @@
     }
     th, td {
       border: 1px solid #ddd;
-      padding: 15px 20px;
+      padding: 8px 12px;
     }
     th {
       background: #D63138;
@@ -144,7 +146,7 @@
   
   {% set circuit_names = ['Ninja', 'Crossfit/Hyrox', 'Précision', 'Suspension'] %}
   {% for i in range(1,5) %}
-    <h2>Circuit {{ circuit_names[i-1] }}</h2>
+    <h2>Circuit {{ i }} => {{ circuit_names[i-1] }}</h2>
 
     <h3>🥇🥈🥉 Meilleurs temps</h3>
     <table>

@@ -16,6 +16,7 @@
 	  color: white;
 	  padding: 10px 20px;
 	  display: flex;                /* mise en ligne */
+	  top: 0;
 	  justify-content: space-between; /* espace entre logos et titre */
 	  align-items: center;          /* alignement vertical */
 	  box-sizing: border-box;
@@ -25,7 +26,7 @@
 		display: inline-block;
 		font-size: 3em;
 		margin: 0;
-		vertical-align: middle;
+		vertical-align: top;
 		text-align: center;
 	}
 
@@ -109,8 +110,8 @@
   #saveBtn:hover { background-color: darkblue; }
 
 	.footer {
-		position: relative; /* plus de fixed */
-		bottom: auto;
+		position: fixed; /* plus de fixed */
+		bottom: 0px;
 		width: 100%;
 		background: #D63138;
 		color: white;
@@ -128,11 +129,23 @@
   }
   .footer a:hover {
     text-decoration: underline;
-  }
+	
+	}
+	
+	#candidateSearch {
+		display: block;
+		width: 100%;
+		font-size: 1.3em;
+		padding: 12px;
+		margin-bottom: 10px; /* un peu moins que le select pour l’espacement */
+		border: 1px solid #ccc;
+		border-radius: 8px;
+		box-sizing: border-box;
+	}
+
 </style>
 </head>
 <body>
-
 	<header>
 		<div class="logo-box">
 			<img src="/static/arenaform-logo.png" alt="Arenaform Logo">
@@ -142,54 +155,82 @@
 			<img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
 		</div>
 	</header>
-
-	<div id="message"></div>
-
 	<form>
-	  <label for="candidate">Candidat :</label>
+	  <input type="text" id="candidateSearch" placeholder="Numéro, prénom ou nom">
+	  
 	  <select id="candidate">
 		{% for c in candidates %}
 		  <option value="{{ c[0] }}">{{ c[0] }} - {{ c[1] }} {{ c[2] }}</option>
 		{% endfor %}
 	  </select>
 
-	<select id="circuit" onchange="toggleTouches()">
-	  <option value="1">Circuit Ninja</option>
-	  <option value="2">Circuit Crossfit/Hyrox</option>
-	  <option value="3">Circuit Précision</option>
-	  <option value="4">Défi suspension</option>
-	</select>
-
-	<script>
-		const circuitMap = {
-			'ninja': '1',
-			'crossfit': '2',
-			'precision': '3',
-			'suspension': '4'
-		};
-
-		const urlParams = new URLSearchParams(window.location.search);
-		const forcedCircuitName = urlParams.get('circuit');
-
-		if (forcedCircuitName && circuitMap[forcedCircuitName]) {
-			const select = document.getElementById('circuit');
-			select.value = circuitMap[forcedCircuitName];  // sélectionne le circuit correspondant
-			select.disabled = true;                        // bloque le select
-			toggleTouches();                               // mettre à jour l'affichage si nécessaire
-		}
-	</script>
-
+	  <select id="circuit" onchange="toggleTouches()">
+		<option value="1">Circuit Ninja</option>
+		<option value="2">Circuit Crossfit/Hyrox</option>
+		<option value="3">Circuit Précision</option>
+		<option value="4">Défi suspension</option>
+	  </select>
 
 	  <!-- Touche réussies uniquement pour circuit 3 -->
 	  <div id="touchesDiv" style="display:none;">
 		<label for="touches">Éléments réussis (0-15) :</label>
 		<select id="touches">
-		  {% for i in range(0,16) %}
+		  {% for i in range(0,6) %}
 			<option value="{{ i }}">{{ i }}</option>
 		  {% endfor %}
 		</select>
 	  </div>
 	</form>
+
+	<script>
+	  const candidateSelect = document.getElementById("candidate");
+	  const candidateSearch = document.getElementById("candidateSearch");
+
+	  candidateSearch.addEventListener("input", function() {
+		const query = this.value.trim().toLowerCase();
+		if (!query) return;
+
+		let found = false;
+
+		for (let option of candidateSelect.options) {
+		  const [id, ...rest] = option.textContent.toLowerCase().split(" - ");
+		  const name = rest.join(" ");
+
+		  // Match par numéro exact
+		  if (id === query) {
+			candidateSelect.value = option.value;
+			found = true;
+			break;
+		  }
+
+		  // Match prénom/nom partiel
+		  if (name.includes(query)) {
+			candidateSelect.value = option.value;
+			found = true;
+			break;
+		  }
+		}
+	  });
+
+	  // --- Ton code circuit inchangé ---
+	  const circuitMap = {
+		'ninja': '1',
+		'crossfit': '2',
+		'precision': '3',
+		'suspension': '4'
+	  };
+
+	  const urlParams = new URLSearchParams(window.location.search);
+	  const forcedCircuitName = urlParams.get('circuit');
+
+	  if (forcedCircuitName && circuitMap[forcedCircuitName]) {
+		const select = document.getElementById('circuit');
+		select.value = circuitMap[forcedCircuitName];
+		select.disabled = true;
+		toggleTouches();
+	  }
+	</script>
+
 
 	<h2 id="time">00:00.00</h2>
 

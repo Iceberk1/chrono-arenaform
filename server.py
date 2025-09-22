@@ -50,12 +50,17 @@ def index():
 def add_candidate():
     if request.method == 'POST':
         data = request.get_json()
-        email_pattern = r'^\S+@\S+\.\S+$'
-        phone_pattern = r'^\d{10}$'
-        if not re.match(email_pattern, data['email']):
-            return jsonify(success=False, error='Email mal formaté')
-        if not re.match(phone_pattern, data['phone']):
-            return jsonify(success=False, error='Téléphone mal formaté')
+        no_contact = data.get('no_contact', False)
+
+        # Validation seulement si on ne bypass pas
+        if not no_contact:
+            email_pattern = r'^\S+@\S+\.\S+$'
+            phone_pattern = r'^\d{10}$'
+            if not re.match(email_pattern, data.get('email', '')):
+                return jsonify(success=False, error='Email mal formaté')
+            if not re.match(phone_pattern, data.get('phone', '')):
+                return jsonify(success=False, error='Téléphone mal formaté')
+
         conn = sqlite3.connect(DB_FILE)
         conn.execute("PRAGMA journal_mode=WAL;")
         c = conn.cursor()
@@ -64,14 +69,36 @@ def add_candidate():
         if c.fetchone()[0] > 0:
             conn.close()
             return jsonify(success=False, error='Candidat déjà existant')
+
         c.execute('SELECT COALESCE(MAX(number),0)+1 FROM candidates')
         next_number = c.fetchone()[0]
+
+        # Si bypass, mettre email et phone à None
+        email = None if no_contact else data.get('email')
+        phone = None if no_contact else data.get('phone')
+
         c.execute('INSERT INTO candidates (number, first_name, last_name, email, phone) VALUES (?,?,?,?,?)',
-                  (next_number, data['first_name'], data['last_name'], data['email'], data['phone']))
+                  (next_number, data['first_name'], data['last_name'], email, phone))
         conn.commit()
         conn.close()
         return jsonify(success=True, number=next_number)
-    return render_template("add_candidates.html")
+        pass
+        
+    # GET : récupération du message si un candidat vient d'être ajouté
+    added_number = request.args.get('added')
+    message = ''
+    if added_number:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute('SELECT first_name, last_name FROM candidates WHERE number=?', (added_number,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            first_name, last_name = row
+            message = f"Candidat {first_name} {last_name} ajouté avec succès ! Numéro : {added_number}"
+
+    return render_template("add_candidates.html", message=message)
+
 
 @app.route('/chrono')
 def chrono():

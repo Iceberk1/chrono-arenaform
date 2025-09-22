@@ -4,6 +4,7 @@ import re
 from openpyxl import Workbook
 import io
 import pandas as pd
+from datetime import datetime
 
 app = Flask(__name__)
 DB_FILE = 'chrono_event.db'
@@ -31,7 +32,8 @@ def init_db():
             circuit INTEGER,
             time REAL,
             touches INTEGER DEFAULT 0,
-            UNIQUE(candidate_number, circuit)
+            created_at DATETIME DEFAULT (DATE('now')),
+            UNIQUE(candidate_number, circuit, created_at)
         )
     ''')
     conn.commit()
@@ -102,11 +104,33 @@ def save_time():
 
 @app.route('/results')
 def results():
+    
+    
+    # DATE DU JOUR
+    date_str = request.args.get('date')
+
+    if date_str:
+        try:
+            # Convertir la chaîne en date (sans l'heure)
+            selected_date = datetime.strptime(date_str, "%d/%m/%Y").date()
+        except ValueError:
+            # Format invalide, utiliser la date du jour
+            selected_date = datetime.now().date()
+    else:
+        # Si aucune date fournie, utiliser la date du jour
+        selected_date = datetime.now().date()
+    # Affichage pour results
+    display_date = selected_date.strftime("%d/%m/%Y")
+    
     conn = sqlite3.connect(DB_FILE)
     conn.execute("PRAGMA journal_mode=WAL;")
 
     c = conn.cursor()
     results_dict = {}
+
+    # Récupérer toutes les dates uniques présentes dans la table results
+    c.execute("SELECT DISTINCT DATE(created_at) FROM results ORDER BY DATE(created_at) DESC")
+    available_dates = [row[0] for row in c.fetchall()]
 
     for circuit in range(1, 5):
         if circuit == 3:
@@ -118,6 +142,7 @@ def results():
                 FROM results r
                 JOIN candidates c ON r.candidate_number = c.number
                 WHERE r.circuit = ?
+                    AND DATE(r.created_at) = DATE('now', 'localtime')
                 ORDER BY r.touches DESC, r.time ASC
             ''', (circuit,))
         elif circuit == 4:
@@ -128,6 +153,7 @@ def results():
                 FROM results r
                 JOIN candidates c ON r.candidate_number = c.number
                 WHERE r.circuit = ?
+                    AND DATE(r.created_at) = DATE('now', 'localtime')
                 ORDER BY r.time DESC
             ''', (circuit,))
         else:
@@ -138,6 +164,7 @@ def results():
                 FROM results r
                 JOIN candidates c ON r.candidate_number = c.number
                 WHERE r.circuit = ?
+                    AND DATE(r.created_at) = DATE('now', 'localtime')
                 ORDER BY r.time ASC
             ''', (circuit,))
 
@@ -154,19 +181,21 @@ def results():
             FROM results r
             JOIN candidates c ON r.candidate_number = c.number
             WHERE r.circuit = ?
+                AND DATE(r.created_at) = DATE('now', 'localtime')
             ORDER BY r.id DESC
             LIMIT 5
         '''.format(extra=', r.touches' if circuit==3 else ''), (circuit,))
         last = c.fetchall()
 
+        # Liste des jours disponibles dans la base
+        c.execute('SELECT DISTINCT DATE(created_at) as d FROM results ORDER BY d DESC')
+        dates = [row[0] for row in c.fetchall()]
+
         results_dict[circuit] = {'best': best, 'last': last}
 
     conn.close()
-    return render_template("results.html", results=results_dict)
+    return render_template("results.html", results=results_dict, selected_date=selected_date, available_dates=available_dates, display_date=display_date)
 
-    
-    conn.close()
-    return render_template("results.html", results=results_dict)
 
 @app.route('/export_excel')
 def export_excel():

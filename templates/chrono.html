@@ -10,17 +10,37 @@
     background-color: #fafafa;
     color: #333;
   }
-  header {
-    background-color: #D63138;
-    padding: 15px;
-    text-align: center;
-    color: white;
-  }
-  header img {
-    height: 70px;
-    display: block;
-    margin: 0 auto 10px auto;
-  }
+	header {
+	  width: 100%;
+	  background: #D63138; /* fond rouge global */
+	  color: white;
+	  padding: 10px 20px;
+	  display: flex;                /* mise en ligne */
+	  justify-content: space-between; /* espace entre logos et titre */
+	  align-items: center;          /* alignement vertical */
+	  box-sizing: border-box;
+	}
+
+	header h1 {
+		display: inline-block;
+		font-size: 3em;
+		margin: 0;
+		vertical-align: middle;
+		text-align: center;
+	}
+
+	.logo-box {
+	  background: white;     /* fond blanc autour des logos */
+	  padding: 5px 10px;     /* un peu d’espace */
+	  border-radius: 8px;    /* coins arrondis */
+	  display: flex;
+	  align-items: center;
+	  gap: 15px;
+	}
+
+	.logo-box img {
+	  height: 60px;
+	}
   h1 {
     font-size: 3em;
     margin: 10px 0;
@@ -113,132 +133,156 @@
 </head>
 <body>
 
-<header>
-  <img src="{{ url_for('static', filename='arenaform-logo.png') }}" alt="Arenaform Logo">
-  <h1>Chrono</h1>
-</header>
+	<header>
+		<div class="logo-box">
+			<img src="/static/arenaform-logo.png" alt="Arenaform Logo">
+		</div>
+		<h1>Chrono</h1>
+		<div class="logo-box">
+			<img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
+		</div>
+	</header>
 
-<div id="message"></div>
+	<div id="message"></div>
 
-<form>
-  <label for="candidate">Candidat :</label>
-  <select id="candidate">
-    {% for c in candidates %}
-      <option value="{{ c[0] }}">{{ c[0] }} - {{ c[1] }} {{ c[2] }}</option>
-    {% endfor %}
-  </select>
+	<form>
+	  <label for="candidate">Candidat :</label>
+	  <select id="candidate">
+		{% for c in candidates %}
+		  <option value="{{ c[0] }}">{{ c[0] }} - {{ c[1] }} {{ c[2] }}</option>
+		{% endfor %}
+	  </select>
 
-  <label for="circuit">Circuit :</label>
-  <select id="circuit" onchange="toggleTouches()">
-    <option value="1">Circuit Ninja</option>
-    <option value="2">Circuit Crossfit/Hyrox</option>
-    <option value="3">Circuit Précision</option>
-    <option value="4">Défi suspension</option>
-  </select>
+	<select id="circuit" onchange="toggleTouches()">
+	  <option value="1">Circuit Ninja</option>
+	  <option value="2">Circuit Crossfit/Hyrox</option>
+	  <option value="3">Circuit Précision</option>
+	  <option value="4">Défi suspension</option>
+	</select>
 
-  <!-- Touche réussies uniquement pour circuit 3 -->
-  <div id="touchesDiv" style="display:none;">
-    <label for="touches">Éléments réussis (0-15) :</label>
-    <select id="touches">
-      {% for i in range(0,16) %}
-        <option value="{{ i }}">{{ i }}</option>
-      {% endfor %}
-    </select>
-  </div>
-</form>
+	<script>
+		const circuitMap = {
+			'ninja': '1',
+			'crossfit': '2',
+			'precision': '3',
+			'suspension': '4'
+		};
 
-<h2 id="time">00:00.00</h2>
+		const urlParams = new URLSearchParams(window.location.search);
+		const forcedCircuitName = urlParams.get('circuit');
 
-<div class="btn-top">
-  <button type="button" onclick="startStop()" id="startStopBtn">Start</button>
-</div>
-
-<div class="btn-bottom">
-  <button type="button" onclick="resetTimer()" id="resetBtn">Reset</button>
-  <button type="button" onclick="save()" id="saveBtn" disabled>Enregistrer</button>
-</div>
-
-<div class="footer">
-  <a href="/add_candidate">➕ Ajouter un candidat</a>
-  <a href="/results">🏆 Voir les résultats</a>
-</div>
-
-<script>
-let running = false;
-let startTime = 0;
-let elapsed = 0;
-let timer;
-
-function updateDisplay() {
-    let current = elapsed;
-    if (running) current += Date.now() - startTime;
-    let totalHundredths = Math.floor(current / 10);
-    let minutes = Math.floor(totalHundredths / 6000);
-    let seconds = Math.floor((totalHundredths % 6000) / 100);
-    let hundredths = totalHundredths % 100;
-    document.getElementById('time').textContent =
-      `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(hundredths).padStart(2,'0')}`;
-}
-
-function startStop() {
-    if (running) {
-        elapsed += Date.now() - startTime;
-        running = false;
-        clearInterval(timer);
-        document.getElementById('startStopBtn').textContent = 'Start';
-        document.getElementById('startStopBtn').style.backgroundColor = 'green';
-        document.getElementById('saveBtn').disabled = false;
-    } else {
-        startTime = Date.now();
-        running = true;
-        timer = setInterval(updateDisplay, 10);
-        document.getElementById('startStopBtn').textContent = 'Stop';
-        document.getElementById('startStopBtn').style.backgroundColor = 'red';
-        document.getElementById('saveBtn').disabled = true;
-    }
-}
-
-function resetTimer() {
-    running = false;
-    elapsed = 0;
-    clearInterval(timer);
-    document.getElementById('time').textContent = '00:00.00';
-    document.getElementById('startStopBtn').textContent = 'Start';
-    document.getElementById('startStopBtn').style.backgroundColor = 'green';
-    document.getElementById('saveBtn').disabled = true;
-}
-
-async function save() {
-    let number = document.getElementById('candidate').value;
-    let circuit = document.getElementById('circuit').value;
-    let time = elapsed/1000;
-    let touches = (circuit == "3") ? parseInt(document.getElementById('touches').value) : 0;
-
-    let response = await fetch('/save_time', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({number, circuit, time, touches})
-    });
-    let result = await response.json();
-    let messageDiv = document.getElementById('message');
-    if(result.success){
-        messageDiv.style.color='green';
-        messageDiv.textContent='Temps enregistré avec succès !';
-        resetTimer();
-    } else {
-        messageDiv.style.color='red';
-        messageDiv.textContent=result.error;
-    }
-}
+		if (forcedCircuitName && circuitMap[forcedCircuitName]) {
+			const select = document.getElementById('circuit');
+			select.value = circuitMap[forcedCircuitName];  // sélectionne le circuit correspondant
+			select.disabled = true;                        // bloque le select
+			toggleTouches();                               // mettre à jour l'affichage si nécessaire
+		}
+	</script>
 
 
-function toggleTouches() {
-    let circuit = document.getElementById('circuit').value;
-    let touchesDiv = document.getElementById('touchesDiv');
-    touchesDiv.style.display = (circuit == "3") ? "block" : "none";
-}
+	  <!-- Touche réussies uniquement pour circuit 3 -->
+	  <div id="touchesDiv" style="display:none;">
+		<label for="touches">Éléments réussis (0-15) :</label>
+		<select id="touches">
+		  {% for i in range(0,16) %}
+			<option value="{{ i }}">{{ i }}</option>
+		  {% endfor %}
+		</select>
+	  </div>
+	</form>
 
-</script>
+	<h2 id="time">00:00.00</h2>
+
+	<div class="btn-top">
+	  <button type="button" onclick="startStop()" id="startStopBtn">Start</button>
+	</div>
+
+	<div class="btn-bottom">
+	  <button type="button" onclick="resetTimer()" id="resetBtn">Reset</button>
+	  <button type="button" onclick="save()" id="saveBtn" disabled>Enregistrer</button>
+	</div>
+
+	<div class="footer">
+	  <a href="/add_candidate">➕ Ajouter un candidat</a>
+	  <a href="/results">🏆 Voir les résultats</a>
+	</div>
+
+	<script>
+	let running = false;
+	let startTime = 0;
+	let elapsed = 0;
+	let timer;
+
+	function updateDisplay() {
+		let current = elapsed;
+		if (running) current += Date.now() - startTime;
+		let totalHundredths = Math.floor(current / 10);
+		let minutes = Math.floor(totalHundredths / 6000);
+		let seconds = Math.floor((totalHundredths % 6000) / 100);
+		let hundredths = totalHundredths % 100;
+		document.getElementById('time').textContent =
+		  `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(hundredths).padStart(2,'0')}`;
+	}
+
+	function startStop() {
+		if (running) {
+			elapsed += Date.now() - startTime;
+			running = false;
+			clearInterval(timer);
+			document.getElementById('startStopBtn').textContent = 'Start';
+			document.getElementById('startStopBtn').style.backgroundColor = 'green';
+			document.getElementById('saveBtn').disabled = false;
+		} else {
+			startTime = Date.now();
+			running = true;
+			timer = setInterval(updateDisplay, 10);
+			document.getElementById('startStopBtn').textContent = 'Stop';
+			document.getElementById('startStopBtn').style.backgroundColor = 'red';
+			document.getElementById('saveBtn').disabled = true;
+		}
+	}
+
+	function resetTimer() {
+		running = false;
+		elapsed = 0;
+		clearInterval(timer);
+		document.getElementById('time').textContent = '00:00.00';
+		document.getElementById('startStopBtn').textContent = 'Start';
+		document.getElementById('startStopBtn').style.backgroundColor = 'green';
+		document.getElementById('saveBtn').disabled = true;
+	}
+
+	async function save() {
+		let number = document.getElementById('candidate').value;
+		let circuit = document.getElementById('circuit').value;
+		let time = elapsed/1000;
+		let touches = (circuit == "3") ? parseInt(document.getElementById('touches').value) : 0;
+
+		let response = await fetch('/save_time', {
+			method: 'POST',
+			headers: {'Content-Type':'application/json'},
+			body: JSON.stringify({number, circuit, time, touches})
+		});
+		let result = await response.json();
+		let messageDiv = document.getElementById('message');
+		if(result.success){
+			messageDiv.style.color='green';
+			messageDiv.textContent='Temps enregistré avec succès !';
+			resetTimer();
+		} else {
+			messageDiv.style.color='red';
+			messageDiv.textContent=result.error;
+		}
+	}
+
+
+	function toggleTouches() {
+		let circuit = document.getElementById('circuit').value;
+		let touchesDiv = document.getElementById('touchesDiv');
+		touchesDiv.style.display = (circuit == "3") ? "block" : "none";
+	}
+
+	</script>
 
 </body>
 </html>

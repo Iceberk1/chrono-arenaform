@@ -10,17 +10,36 @@
       background-color: #fafafa;
       color: #333;
     }
-    header {
-      background-color: #D63138;
-      padding: 15px;
-      text-align: center;
-      color: white;
-    }
-    header img {
-      height: 60px;
-      display: block;
-      margin: 0 auto 10px auto;
-    }
+	header {
+	  width: 100%;
+	  background: #D63138; /* fond rouge global */
+	  color: white;
+	  padding: 10px 20px;
+	  display: flex;                /* mise en ligne */
+	  justify-content: space-between; /* espace entre logos et titre */
+	  align-items: center;          /* alignement vertical */
+	  box-sizing: border-box;
+	}
+
+	header h1 {
+		display: inline-block;
+		font-size: 3em;
+		margin: 0;
+		vertical-align: middle;
+	}
+
+	.logo-box {
+	  background: white;     /* fond blanc autour des logos */
+	  padding: 5px 10px;     /* un peu d’espace */
+	  border-radius: 8px;    /* coins arrondis */
+	  display: flex;
+	  align-items: center;
+	  gap: 15px;
+	}
+
+	.logo-box img {
+	  height: 60px;
+	}
     h1 {
       font-size: 2.5em;
       margin: 10px 0;
@@ -109,46 +128,51 @@
     }
   </script>
 </head>
-<body>
-  <header>
-    <img src="{{ url_for('static', filename='arenaform-logo.png') }}" alt="Arenaform Logo">
-    <h1>Ajouter un candidat</h1>
-  </header>
+	<body>
+		<header>
+			<div class="logo-box">
+				<img src="/static/arenaform-logo.png" alt="Arenaform Logo">
+			</div>
+			<h1>Ajouter un candidat</h1>
+			<div class="logo-box">
+				<img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
+			</div>
+		</header>
 
-  <div id="message"></div>
+	  <div id="message"></div>
 
-  <form id="candidateForm" onsubmit="addCandidate(event)">
-    <label>Prénom:
-      <input type="text" name="first_name" required>
-    </label>
-    <label>Nom:
-      <input type="text" name="last_name" required>
-    </label>
-    <label>Email:
-      <input type="email" name="email" required>
-    </label>
-    <label>Téléphone:
-      <input type="text" name="phone" required>
-    </label>
-    <input type="submit" value="Ajouter">
-  </form>
-  
- <!-- Bouton export Excel -->
-<div style="text-align:center; margin-top:20px;">
-    <a href="/export_excel" style="
-        font-size:1.8em;
-        padding:12px 20px;
-        background-color:green;
-        color:white;
-        text-decoration:none;
-        border-radius:5px;
-        display:inline-block;
-    ">📥 Export Excel</a>
-</div>
+	  <form id="candidateForm" onsubmit="addCandidate(event)">
+		<label>Prénom:
+		  <input type="text" name="first_name" required>
+		</label>
+		<label>Nom:
+		  <input type="text" name="last_name" required>
+		</label>
+		<label>Email:
+		  <input type="email" name="email" required>
+		</label>
+		<label>Téléphone:
+		  <input type="text" name="phone" required>
+		</label>
+		<input type="submit" value="Ajouter">
+	  </form>
+	  
+	 <!-- Bouton export Excel -->
+	<div style="text-align:center; margin-top:20px;">
+		<a href="/export_excel" style="
+			font-size:1.8em;
+			padding:12px 20px;
+			background-color:green;
+			color:white;
+			text-decoration:none;
+			border-radius:5px;
+			display:inline-block;
+		">📥 Export Excel</a>
+	</div>
 
-  <div class="footer">
-    <a href="/chrono">⏱ Aller au chrono</a>
-    <a href="/results">🏆 Aller aux résultats!</a>
-  </div>
-</body>
+	  <div class="footer">
+		<a href="/chrono">⏱ Aller au chrono</a>
+		<a href="/results">🏆 Aller aux résultats!</a>
+	  </div>
+	</body>
 </html>

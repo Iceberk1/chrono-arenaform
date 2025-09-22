@@ -25,29 +25,48 @@
 	  align-items: center;          /* alignement vertical */
 	  box-sizing: border-box;
     }
-    header img {
-      height: 120px;
-      vertical-align: middle;
-      margin-right: 10px;
-    }
+
 	header h1 {
 		display: inline-block;
 		font-size: 3em;
 		margin: 0;
 		vertical-align: middle;
 		flex: 1; /* occupe l’espace restant pour garder le titre centré */
+		text-align: center;
 	}
 	
 	.logo-box {
 	  background: white;     /* fond blanc autour des logos */
-	  padding: 5px 5px;     /* un peu d’espace */
+	  padding: 5px 10px;     /* un peu d’espace */
 	  border-radius: 8px;    /* coins arrondis */
 	  display: flex;
 	  align-items: center;
+	  gap: 15px;
 	}
 
 	.logo-box img {
 	  height: 60px;
+	}
+	
+	
+	.date-form {
+	  font-size: 0.8em;
+	}
+
+	.date-form input,
+	.date-form button {
+	  font-size: 0.9em;
+	  padding: 3px 6px;
+	  border-radius: 4px;
+	  border: none;
+	}
+	.date-form button {
+	  background: #fff;
+	  color: #D63138;
+	  cursor: pointer;
+	}
+	.date-form button:hover {
+	  background: #eee;
 	}
 
 	h2 {
@@ -109,12 +128,20 @@
   <header>
 	<div class="logo-box">
 		<img src="/static/arenaform-logo.png" alt="Arenaform Logo">
-	</div>
-    <h1>Résultats par circuit</h1>
-	<div class="logo-box">
 		<img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
 	</div>
+	
+    <h1>Résultats du {{ display_date }}</h1>
+
+	<form method="get" style="margin-bottom: 20px;">
+		<select name="date" id="date" onchange="this.form.submit()">
+			{% for d in available_dates %}
+				<option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}</option>
+			{% endfor %}
+		</select>
+	</form>
   </header>
+  
   {% set circuit_names = ['Ninja', 'Crossfit/Hyrox', 'Précision', 'Suspension'] %}
   {% for i in range(1,5) %}
     <h2>Circuit {{ circuit_names[i-1] }}</h2>

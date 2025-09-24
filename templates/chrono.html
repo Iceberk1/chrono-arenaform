@@ -155,6 +155,11 @@
 			<img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
 		</div>
 	</header>
+	
+	<div id="message" style="color: green;">
+	  {{ message }}
+	</div>
+		
 	<form>
 	  <input type="text" id="candidateSearch" placeholder="Numéro, prénom ou nom">
 	  
@@ -173,7 +178,7 @@
 
 	  <!-- Touche réussies uniquement pour circuit 3 -->
 	  <div id="touchesDiv" style="display:none;">
-		<label for="touches">Éléments réussis (0-15) :</label>
+		<label for="touches">Éléments réussis (0-5) :</label>
 		<select id="touches">
 		  {% for i in range(0,6) %}
 			<option value="{{ i }}">{{ i }}</option>
@@ -296,25 +301,21 @@
 	async function save() {
 		let number = document.getElementById('candidate').value;
 		let circuit = document.getElementById('circuit').value;
-		let time = elapsed/1000;
+		let time = elapsed / 1000;
 		let touches = (circuit == "3") ? parseInt(document.getElementById('touches').value) : 0;
 
 		let response = await fetch('/save_time', {
 			method: 'POST',
-			headers: {'Content-Type':'application/json'},
-			body: JSON.stringify({number, circuit, time, touches})
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({ number, circuit, time, touches })
 		});
-		let result = await response.json();
-		let messageDiv = document.getElementById('message');
-		if(result.success){
-			messageDiv.style.color='green';
-			messageDiv.textContent='Temps enregistré avec succès !';
-			resetTimer();
-		} else {
-			messageDiv.style.color='red';
-			messageDiv.textContent=result.error;
+
+		// 🚀 Si le serveur a redirigé, on recharge la page avec la bonne URL
+		if (response.redirected) {
+			window.location.href = response.url;
 		}
 	}
+
 
 
 	function toggleTouches() {

@@ -107,8 +107,21 @@ def chrono():
     c = conn.cursor()
     c.execute('SELECT number, first_name, last_name FROM candidates ORDER BY number')
     candidates = c.fetchall()
+
+    # message si temps enregistré
+    saved_time = request.args.get('saved_time')
+    circuit = request.args.get('circuit')
+    message = ''
+    if saved_time and circuit:
+        c.execute("SELECT first_name, last_name FROM candidates WHERE number=?", (saved_time,))
+        row = c.fetchone()
+        if row:
+            first_name, last_name = row
+            message = f"Temps enregistré pour {first_name} {last_name} sur le circuit {circuit} ✅"
+
     conn.close()
-    return render_template("chrono.html", candidates=candidates)
+    return render_template("chrono.html", candidates=candidates, message=message)
+
 
 @app.route('/save_time', methods=['POST'])
 def save_time():
@@ -121,47 +134,82 @@ def save_time():
     conn = sqlite3.connect(DB_FILE)
     conn.execute("PRAGMA journal_mode=WAL;")
     c = conn.cursor()
+
+    # Date du jour pour comparaison
+    today = c.execute("SELECT DATE('now')").fetchone()[0]
+
+    # Chercher si une ligne existe déjà pour ce candidat/circuit/date
     c.execute('''
-        INSERT OR REPLACE INTO results (candidate_number, circuit, time, touches)
-        VALUES (?, ?, ?, ?)
+        SELECT id, time, touches FROM results
+        WHERE candidate_number = ? AND circuit = ? AND DATE(created_at) = ?
+    ''', (number, circuit, today))
+    row = c.fetchone()
+
+    should_replace = True
+
+    if row:
+        old_id, old_time, old_touches = row
+
+        if circuit in [1, 2]:  # Meilleur temps = plus faible
+            should_replace = time < old_time
+
+        elif circuit == 3:  # Priorité touches > temps
+            if touches > old_touches:
+                should_replace = True
+            elif touches == old_touches:
+                should_replace = time < old_time
+            else:
+                should_replace = False
+
+        elif circuit == 4:  # Meilleur temps = plus élevé
+            should_replace = time > old_time
+
+        # Supprimer si on doit remplacer
+        if should_replace:
+            c.execute('DELETE FROM results WHERE id = ?', (old_id,))
+        else:
+            conn.commit()
+            conn.close()
+            return redirect(url_for('chrono', saved_time=number, circuit=circuit))
+
+    # Insérer la nouvelle valeur (nouvel id)
+    c.execute('''
+        INSERT INTO results (candidate_number, circuit, time, touches, created_at)
+        VALUES (?, ?, ?, ?, DATE('now'))
     ''', (number, circuit, time, touches))
+
     conn.commit()
     conn.close()
-    return jsonify(success=True)
+    return redirect(url_for('chrono', saved_time=number, circuit=circuit))
+
 
 @app.route('/results')
 def results():
-    
-    
-    # DATE DU JOUR
     date_str = request.args.get('date')
 
     if date_str:
         try:
-            # Convertir la chaîne en date (sans l'heure)
-            selected_date = datetime.strptime(date_str, "%d/%m/%Y").date()
+            # Accepte format YYYY-MM-DD
+            selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
-            # Format invalide, utiliser la date du jour
+            # fallback : jour courant
             selected_date = datetime.now().date()
     else:
-        # Si aucune date fournie, utiliser la date du jour
         selected_date = datetime.now().date()
-    # Affichage pour results
+
     display_date = selected_date.strftime("%d/%m/%Y")
-    
+
     conn = sqlite3.connect(DB_FILE)
     conn.execute("PRAGMA journal_mode=WAL;")
-
     c = conn.cursor()
     results_dict = {}
 
-    # Récupérer toutes les dates uniques présentes dans la table results
+    # Dates dispo dans la base
     c.execute("SELECT DISTINCT DATE(created_at) FROM results ORDER BY DATE(created_at) DESC")
     available_dates = [row[0] for row in c.fetchall()]
 
     for circuit in range(1, 5):
         if circuit == 3:
-            # Circuit 3 : touches réussies puis temps
             c.execute('''
                 SELECT r.candidate_number, c.last_name, c.first_name,
                        printf("%02d:%02d.%02d", r.time/60, r.time%60, (r.time*100)%100),
@@ -169,59 +217,57 @@ def results():
                 FROM results r
                 JOIN candidates c ON r.candidate_number = c.number
                 WHERE r.circuit = ?
-                    AND DATE(r.created_at) = DATE('now', 'localtime')
+                  AND DATE(r.created_at) = ?
                 ORDER BY r.touches DESC, r.time ASC
-            ''', (circuit,))
+            ''', (circuit, selected_date))
         elif circuit == 4:
-            # Circuit 4 : celui qui reste le plus longtemps gagne (temps DESC)
             c.execute('''
                 SELECT r.candidate_number, c.last_name, c.first_name,
                        printf("%02d:%02d.%02d", r.time/60, r.time%60, (r.time*100)%100)
                 FROM results r
                 JOIN candidates c ON r.candidate_number = c.number
                 WHERE r.circuit = ?
-                    AND DATE(r.created_at) = DATE('now', 'localtime')
+                  AND DATE(r.created_at) = ?
                 ORDER BY r.time DESC
-            ''', (circuit,))
+            ''', (circuit, selected_date))
         else:
-            # Circuits 1 et 2 : classement normal par temps
             c.execute('''
                 SELECT r.candidate_number, c.last_name, c.first_name,
                        printf("%02d:%02d.%02d", r.time/60, r.time%60, (r.time*100)%100)
                 FROM results r
                 JOIN candidates c ON r.candidate_number = c.number
                 WHERE r.circuit = ?
-                    AND DATE(r.created_at) = DATE('now', 'localtime')
+                  AND DATE(r.created_at) = ?
                 ORDER BY r.time ASC
-            ''', (circuit,))
+            ''', (circuit, selected_date))
 
         rows = c.fetchall()
-
-        # Meilleurs 3
         best = rows[:3]
 
-        # Derniers 5 en ordre d'insertion
-        c.execute('''
+        # Derniers 5
+        c.execute(f'''
             SELECT r.candidate_number, c.last_name, c.first_name,
                    printf("%02d:%02d.%02d", r.time/60, r.time%60, (r.time*100)%100)
-                   {extra}
+                   {', r.touches' if circuit==3 else ''}
             FROM results r
             JOIN candidates c ON r.candidate_number = c.number
             WHERE r.circuit = ?
-                AND DATE(r.created_at) = DATE('now', 'localtime')
+              AND DATE(r.created_at) = ?
             ORDER BY r.id DESC
             LIMIT 5
-        '''.format(extra=', r.touches' if circuit==3 else ''), (circuit,))
+        ''', (circuit, selected_date))
         last = c.fetchall()
-
-        # Liste des jours disponibles dans la base
-        c.execute('SELECT DISTINCT DATE(created_at) as d FROM results ORDER BY d DESC')
-        dates = [row[0] for row in c.fetchall()]
 
         results_dict[circuit] = {'best': best, 'last': last}
 
     conn.close()
-    return render_template("results.html", results=results_dict, selected_date=selected_date, available_dates=available_dates, display_date=display_date)
+    return render_template(
+        "results.html",
+        results=results_dict,
+        selected_date=selected_date,
+        available_dates=available_dates,
+        display_date=display_date
+    )
 
 
 @app.route('/export_excel')

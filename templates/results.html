@@ -13,26 +13,24 @@
       text-align: center;
 	  padding-top: 100px; /* hauteur approximative du header */
     }
-    header {
-	  position: fixed;
-	  top: 0;
-	  left: 0;
+	header {
 	  width: 100%;
 	  background: #D63138; /* fond rouge global */
 	  color: white;
 	  padding: 10px 20px;
 	  display: flex;                /* mise en ligne */
+	  top: 0;
 	  justify-content: space-between; /* espace entre logos et titre */
 	  align-items: center;          /* alignement vertical */
 	  box-sizing: border-box;
-    }
+	  position: fixed;
+	}
 
 	header h1 {
 		display: inline-block;
 		font-size: 3em;
 		margin: 0;
-		vertical-align: middle;
-		flex: 1; /* occupe l’espace restant pour garder le titre centré */
+		vertical-align: top;
 		text-align: center;
 	}
 	
@@ -113,6 +111,7 @@
 		text-align: center;
 		font-size: 1.5em;
 		box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+		display: flex;
 	}
 
     .footer a {
@@ -124,24 +123,55 @@
     .footer a:hover {
       text-decoration: underline;
     }
+	
+	.footer-form select,
+	.footer-form button {
+	  font-size: 1em;
+	  padding: 3px 6px;
+	  border-radius: 4px;
+	  border: none;
+	}
+
+	.footer-form button {
+	  background: #fff;
+	  color: #D63138;
+	  cursor: pointer;
+	}
+
+	.footer-form button:hover {
+	  background: #eee;
+	}
+	
+	.footer-links {
+	  display: flex;
+	  gap: 30px;
+	  justify-content: center; /* liens centrés */
+	  flex: 1; /* occupe l’espace restant */
+	}
+
+	.footer-form {
+	  margin-left: auto; /* pousse le formulaire tout à droite */
+	  display: flex;
+	  align-items: center;
+	  gap: 10px;
+	  padding-right: 10px; /* décollage léger de la droite */
+	}
+
   </style>
 </head>
 <body>
   <header>
 	<div class="logo-box">
 		<img src="/static/arenaform-logo.png" alt="Arenaform Logo">
-		<img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
 	</div>
 	
-    <h1>Résultats du {{ display_date }}</h1>
-
-	<form method="get" style="margin-bottom: 20px;">
-		<select name="date" id="date" onchange="this.form.submit()">
-			{% for d in available_dates %}
-				<option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}</option>
-			{% endfor %}
-		</select>
-	</form>
+	<div>
+		<h1>Résultats du {{ display_date }}</h1>
+	</div>
+	
+	<div class="logo-box">
+		<img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
+	</div>
   </header>
   
   {% set circuit_names = ['Ninja', 'Crossfit/Hyrox', 'Précision', 'Suspension'] %}
@@ -201,33 +231,39 @@
 
   {% endfor %}
 
-  <div class="footer">
+<div class="footer">
+  <div class="footer-links">
     <a href="/chrono">⏱ Aller au chrono</a>
     <a href="/add_candidate">➕ Ajouter un candidat</a>
   </div>
-  
-<script>
-  function autoScroll() {
-    let scrollStep = 1; // vitesse de scroll (pixels)
-    let scrollInterval = 30; // délai entre ticks (ms)
-    let timer = setInterval(function() {
-      if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
-        clearInterval(timer);
-        // arrivé en bas -> attendre 2s puis refresh
-        setTimeout(() => { window.location.reload(); }, 5000);
-      } else {
-        window.scrollBy(0, scrollStep);
-      }
-    }, scrollInterval);
-  }
 
-  window.onload = function() {
-    // toujours commencer tout en haut
-    window.scrollTo(0, 0);
-    // attendre 5s avant de commencer à défiler
-    setTimeout(autoScroll, 5000);
-  }
-</script>
+  <form method="get" class="footer-form">
+    <select name="date" id="date">
+      {% for d in available_dates %}
+        <option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Go</button>
+  </form>
+</div>
+
+  
+	<script>
+	  function autoScroll() {
+		let scrollStep = 1; // vitesse de scroll (pixels)
+		let scrollInterval = 30; // délai entre ticks (ms)
+		let timer = setInterval(function() {
+		  if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
+			clearInterval(timer);
+			// arrivé en bas -> attendre 2s puis refresh
+			setTimeout(() => { window.location.reload(); }, 5000);
+		  } else {
+			window.scrollBy(0, scrollStep);
+		  }
+		}, scrollInterval);
+	  }
+	
+	</script>
   
 </body>
 </html>

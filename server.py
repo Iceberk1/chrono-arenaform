@@ -32,8 +32,7 @@ def init_db():
             circuit INTEGER,
             time REAL,
             touches INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT (DATE('now')),
-            UNIQUE(candidate_number, circuit, created_at)
+            created_at DATETIME DEFAULT (DATE('now'))
         )
     ''')
     conn.commit()
@@ -135,43 +134,6 @@ def save_time():
     conn.execute("PRAGMA journal_mode=WAL;")
     c = conn.cursor()
 
-    # Date du jour pour comparaison
-    today = c.execute("SELECT DATE('now')").fetchone()[0]
-
-    # Chercher si une ligne existe déjà pour ce candidat/circuit/date
-    c.execute('''
-        SELECT id, time, touches FROM results
-        WHERE candidate_number = ? AND circuit = ? AND DATE(created_at) = ?
-    ''', (number, circuit, today))
-    row = c.fetchone()
-
-    should_replace = True
-
-    if row:
-        old_id, old_time, old_touches = row
-
-        if circuit in [1, 2]:  # Meilleur temps = plus faible
-            should_replace = time < old_time
-
-        elif circuit == 3:  # Priorité touches > temps
-            if touches > old_touches:
-                should_replace = True
-            elif touches == old_touches:
-                should_replace = time < old_time
-            else:
-                should_replace = False
-
-        elif circuit == 4:  # Meilleur temps = plus élevé
-            should_replace = time > old_time
-
-        # Supprimer si on doit remplacer
-        if should_replace:
-            c.execute('DELETE FROM results WHERE id = ?', (old_id,))
-        else:
-            conn.commit()
-            conn.close()
-            return redirect(url_for('chrono', saved_time=number, circuit=circuit))
-
     # Insérer la nouvelle valeur (nouvel id)
     c.execute('''
         INSERT INTO results (candidate_number, circuit, time, touches, created_at)
@@ -242,7 +204,17 @@ def results():
             ''', (circuit, selected_date))
 
         rows = c.fetchall()
-        best = rows[:3]
+
+        # Dictionnaire pour stocker la meilleure perf par candidat
+        unique_best = {}
+        for r in rows:
+            cand_number = r[0]
+            if cand_number not in unique_best:
+                unique_best[cand_number] = r  # première occurrence (meilleure car déjà trié)
+            # sinon on ignore car une meilleure perf est déjà enregistrée
+
+        # On garde uniquement les premiers candidats uniques
+        best = list(unique_best.values())[:3]
 
         # Derniers 5
         c.execute(f'''

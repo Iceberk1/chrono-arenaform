@@ -319,10 +319,35 @@
 
 
 	function toggleTouches() {
-		let circuit = document.getElementById('circuit').value;
-		let touchesDiv = document.getElementById('touchesDiv');
-		touchesDiv.style.display = (circuit == "3") ? "block" : "none";
+	  let circuit = document.getElementById('circuit').value;
+
+	  // On cache tout par défaut
+	  let touchesDiv = document.getElementById('touchesDiv');
+	  touchesDiv.style.display = "none";
+
+	  switch (circuit) {
+		case "1": // Ninja
+		  console.log("Circuit Ninja activé");
+		  break;
+
+		case "2": // Crossfit/Hyrox
+		  console.log("Circuit Hyrox activé");
+		  break;
+
+		case "3": // Précision
+		  touchesDiv.style.display = "block"; // seul circuit qui affiche les touches
+		  console.log("Circuit Précision activé");
+		  break;
+
+		case "4": // Suspension
+		  console.log("Circuit Suspension activé");
+		  break;
+
+		default:
+		  console.log("Circuit inconnu");
+	  }
 	}
+
 
 	</script>
 

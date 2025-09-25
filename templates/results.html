@@ -6,12 +6,12 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f9f9f9;
+      background: #f0f0f0;
       color: #222;
       margin: 0;
       padding: 0;
       text-align: center;
-	  padding-top: 100px; /* hauteur approximative du header */
+	  padding-top: 120px; /* hauteur approximative du header */
     }
 	header {
 	  width: 100%;
@@ -156,6 +156,29 @@
 	  gap: 10px;
 	  padding-right: 10px; /* décollage léger de la droite */
 	}
+	.circuit-block {
+	  background-color: #ffffff;
+	  padding: 20px;
+	  margin: 20px auto;
+	  border-radius: 12px;
+	  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+	  max-width: 90%;
+	}
+
+
+	.circuit-block h2 {
+	  margin-bottom: 10px;
+	}
+
+	.circuit-block h3 {
+	  margin-top: 15px;
+	  margin-bottom: 10px;
+	}
+
+	.circuit-block table {
+	  margin-bottom: 20px;
+	}
+
 
   </style>
 </head>
@@ -173,97 +196,110 @@
 		<img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
 	</div>
   </header>
-  
-  {% set circuit_names = ['Ninja', 'Crossfit/Hyrox', 'Précision', 'Suspension'] %}
-  {% for i in range(1,5) %}
-    <h2>Circuit {{ i }} => {{ circuit_names[i-1] }}</h2>
+	  {% set circuit_names = ['Ninja', 'Crossfit/Hyrox', 'Précision', 'Suspension'] %}
+	  {% for i in range(1,5) %}
+	      <div class="circuit-block">
 
-    <h3>🥇🥈🥉 Meilleurs temps</h3>
-    <table>
-      <tr>
-        <th>Rang</th>
-        <th>Numéro</th>
-        <th>Nom</th>
-        <th>Prénom</th>
-		{% if i == 4 %}
-        <th>Temps</th>
-		{% endif %}
-      </tr>
-      {% for r in results[i]['best'] %}
-      <tr>
-        <td>
-          {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
-        </td>
-        <td>{{ r[0] }}</td>
-        <td>{{ r[2] }}</td>
-        <td>{{ r[1] }}</td>
-		{% if i == 4 %}
-		  <td>{{ r[3] }}</td>
-		{% endif %}
-      </tr>
-      {% endfor %}
+		<h2>Circuit {{ i }} => {{ circuit_names[i-1] }}</h2>
+
+		<h3>🥇🥈🥉 Meilleurs temps</h3>
+		<table>
+		  <tr>
+			<th>Rang</th>
+			<th>Numéro</th>
+			<th>Nom</th>
+			<th>Prénom</th>
+			{% if i == 4 %}
+			<th>Temps</th>
+			{% endif %}
+		  </tr>
+		  {% for r in results[i]['best'] %}
+		  <tr>
+			<td>
+			  {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+			</td>
+			<td>{{ r[0] }}</td>
+			<td>{{ r[2] }}</td>
+			<td>{{ r[1] }}</td>
+			{% if i == 4 %}
+			  <td>{{ r[3] }}</td>
+			{% endif %}
+		  </tr>
+		  {% endfor %}
+		</table>
+
+		<h3>Derniers temps enregistrés</h3>
+		<table>
+		  <tr>
+			<th>Numéro</th>
+			<th>Nom</th>
+			<th>Prénom</th>
+			<th>Temps</th>
+			{% if i == 3 %}
+			<th>Touches</th>
+			{% endif %}
+		  </tr>
+		  {% for r in results[i]['last'] %}
+			<tr>
+			  <td>{{ r[0] }}</td>
+			  <td>{{ r[2] }}</td>
+			  <td>{{ r[1] }}</td>
+			  <td>{{ r[3] }}</td>
+			  {% if i == 3 %}
+			  <td>{{ r[4] }}</td>
+			  {% endif %}
+			</tr>
+
+		  {% endfor %}
     </table>
-
-    <h3>Derniers temps enregistrés</h3>
-    <table>
-      <tr>
-        <th>Numéro</th>
-        <th>Nom</th>
-        <th>Prénom</th>
-        <th>Temps</th>
-		{% if i == 3 %}
-        <th>Touches</th>
-		{% endif %}
-      </tr>
-      {% for r in results[i]['last'] %}
-		<tr>
-		  <td>{{ r[0] }}</td>
-		  <td>{{ r[2] }}</td>
-		  <td>{{ r[1] }}</td>
-		  <td>{{ r[3] }}</td>
-		  {% if i == 3 %}
-		  <td>{{ r[4] }}</td>
-		  {% endif %}
-		</tr>
-
-      {% endfor %}
-    </table>
+	</div>
 
   {% endfor %}
+	
+	<div class="footer">
+	  <div class="footer-links">
+		<a href="/chrono">⏱ Aller au chrono</a>
+		<a href="/add_candidate">➕ Ajouter un candidat</a>
+	  </div>
 
-<div class="footer">
-  <div class="footer-links">
-    <a href="/chrono">⏱ Aller au chrono</a>
-    <a href="/add_candidate">➕ Ajouter un candidat</a>
-  </div>
-
-  <form method="get" class="footer-form">
-    <select name="date" id="date">
-      {% for d in available_dates %}
-        <option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit">Go</button>
-  </form>
-</div>
+	  <form method="get" class="footer-form">
+		<select name="date" id="date">
+		  {% for d in available_dates %}
+			<option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}</option>
+		  {% endfor %}
+		</select>
+		<button type="submit">Go</button>
+	  </form>
+	</div>
 
   
 	<script>
 	  function autoScroll() {
-		let scrollStep = 1; // vitesse de scroll (pixels)
-		let scrollInterval = 30; // délai entre ticks (ms)
-		let timer = setInterval(function() {
+		const scrollStep = 1;      // pixels à chaque tick
+		const scrollInterval = 30;  // ms entre ticks
+
+		const timer = setInterval(() => {
+		  // si on est arrivé en bas
 		  if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
 			clearInterval(timer);
-			// arrivé en bas -> attendre 2s puis refresh
-			setTimeout(() => { window.location.reload(); }, 5000);
+			// pause de 5s avant de reload
+			setTimeout(() => { 
+			  window.scrollTo(0,0);  // remet en haut avant reload
+			  window.location.reload(); 
+			}, 5000);
 		  } else {
 			window.scrollBy(0, scrollStep);
 		  }
 		}, scrollInterval);
 	  }
-	
+
+	  window.onload = () => {
+		// toujours commencer en haut
+		window.scrollTo(0,0);
+		// pause initiale de 5s avant de commencer à scroller
+		setTimeout(autoScroll, 5000);
+	  };
 	</script>
-  
+
 </body>
 </html>

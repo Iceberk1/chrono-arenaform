@@ -3,6 +3,8 @@
 Requiert python3.13.7 =>
 https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe
 
+A installer en tant qu'administrateur !  
+
 Requiert les modules suivants
 ```bash
 pip install openpyxl Flask pandas

@@ -10,10 +10,11 @@ pip install Flask
 pip install pandas
 ```
 
-## How to use
+## Comment l'utiliser
 ```bash
-# Open cmd line
-# Cd to right folder
-# python server.py
-# connect to the address mentionned in the cmd
+# Télécharger l'archive
+# Dézipper si besoin
+# Double cliquer sur chrono-arenaform.cmd
+# Copier coller l'adresse mentionné dans le terminal sur un navigateur web
+# Tous les équipements connectés au même sous réseau seront à même de se conneceter à l'application
 ```

@@ -5,9 +5,7 @@ https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe
 
 Requiert les modules suivants
 ```bash
-pip install openpyxl
-pip install Flask
-pip install pandas
+pip install openpyxl Flask pandas
 ```
 
 ## Comment l'utiliser

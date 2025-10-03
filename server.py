@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import sqlite3
 import re
 from openpyxl import Workbook
+from openpyxl.styles import Alignment
+
 import io
 import pandas as pd
 from datetime import datetime
@@ -241,65 +243,89 @@ def results():
         display_date=display_date
     )
 
-
+# EXPORT excel
 @app.route('/export_excel')
 def export_excel():
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, PatternFill, Font
+    import io
+
     conn = sqlite3.connect(DB_FILE)
     conn.execute("PRAGMA journal_mode=WAL;")
     c = conn.cursor()
 
-    # Créer le classeur Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "Candidats"
 
+    # Styles Arenaform
+    header_fill = PatternFill(start_color="D63138", end_color="D63138", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    alt_fill = PatternFill(start_color="F7F7F7", end_color="F7F7F7", fill_type="solid")
+
     # En-têtes
     headers = ["Numéro", "Nom", "Prénom", "Email", "Téléphone",
-               "Circuit 1", "Circuit 2", "Circuit 3 (temps)", "Circuit 3 (touches)", "Circuit 4"]
+               "Circuit 1 - Ninja", "Circuit 2 - Crossfit/Hyrox", "Circuit 3 - Précision (temps)", "Circuit 3 - Précision (touches)", "Circuit 4 - Suspension"]
     ws.append(headers)
 
-    # Récupérer tous les candidats
+    # Style en-têtes
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(1, col, header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Récupérer candidats
     c.execute("SELECT number, last_name, first_name, email, phone FROM candidates")
     candidates = c.fetchall()
 
+    row_index = 2
     for cand in candidates:
         number = cand[0]
         row = list(cand)
 
-        # Pour chaque circuit, récupérer le temps
+        # Récup résultats circuits
         for circuit in range(1, 5):
             if circuit == 3:
-                c.execute('''
-                    SELECT time, touches
-                    FROM results
-                    WHERE candidate_number=? AND circuit=3
-                ''', (number,))
-                res = c.fetchone()
+                c.execute("SELECT time, touches FROM results WHERE candidate_number=? AND circuit=3", (number,))
+                res = c.fetchall()
                 if res:
-                    time_str = f"{int(res[0]//60):02d}:{int(res[0]%60):02d}.{int(res[0]*100%100):02d}"
-                    touches = res[1]
+                    times = "\n".join([f"{int(t[0]//60):02d}:{int(t[0]%60):02d}.{int(t[0]*100%100):02d}" for t in res])
+                    touches = "\n".join([str(t[1]) for t in res])
                 else:
-                    time_str = ""
-                    touches = ""
-                row.extend([time_str, touches])
+                    times, touches = "", ""
+                row.extend([times, touches])
             else:
-                c.execute('''
-                    SELECT time
-                    FROM results
-                    WHERE candidate_number=? AND circuit=?
-                ''', (number, circuit))
-                res = c.fetchone()
+                c.execute("SELECT time FROM results WHERE candidate_number=? AND circuit=?", (number, circuit))
+                res = c.fetchall()
                 if res:
-                    time_str = f"{int(res[0]//60):02d}:{int(res[0]%60):02d}.{int(res[0]*100%100):02d}"
+                    times = "\n".join([f"{int(t[0]//60):02d}:{int(t[0]%60):02d}.{int(t[0]*100%100):02d}" for t in res])
                 else:
-                    time_str = ""
-                row.append(time_str)
+                    times = ""
+                row.append(times)
 
         ws.append(row)
 
+        # Appliquer style à la ligne (alternance gris clair)
+        if row_index % 2 == 0:
+            for col in range(1, len(headers) + 1):
+                ws.cell(row_index, col).fill = alt_fill
+
+        row_index += 1
+
     conn.close()
 
-    # Sauvegarder dans un flux mémoire et renvoyer le fichier
+    # Ajustement auto largeur colonnes
+    for col in ws.columns:
+        max_length = 0
+        col_letter = col[0].column_letter
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+            cell.alignment = Alignment(wrapText=True, vertical="top")
+        ws.column_dimensions[col_letter].width = min(max_length + 2, 40)  # limite largeur max
+
+    # Export
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
@@ -308,6 +334,7 @@ def export_excel():
                      download_name="candidats.xlsx",
                      as_attachment=True,
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
 
 # Page de stats
 @app.route("/stats")

@@ -246,9 +246,10 @@ def results():
 # EXPORT excel
 @app.route('/export_excel')
 def export_excel():
+    import sqlite3, io
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, PatternFill, Font
-    import io
+    from flask import send_file
 
     conn = sqlite3.connect(DB_FILE)
     conn.execute("PRAGMA journal_mode=WAL;")
@@ -263,9 +264,14 @@ def export_excel():
     header_font = Font(color="FFFFFF", bold=True)
     alt_fill = PatternFill(start_color="F7F7F7", end_color="F7F7F7", fill_type="solid")
 
-    # En-têtes
-    headers = ["Numéro", "Nom", "Prénom", "Email", "Téléphone",
-               "Circuit 1 - Ninja", "Circuit 2 - Crossfit/Hyrox", "Circuit 3 - Précision (temps)", "Circuit 3 - Précision (touches)", "Circuit 4 - Suspension"]
+    # En-têtes (2 colonnes par circuit)
+    headers = [
+        "Numéro", "Nom", "Prénom", "Email", "Téléphone",
+        "Circuit 1 - Ninja (Nb passages)", "Circuit 1 - Ninja (Meilleur)",
+        "Circuit 2 - Crossfit/Hyrox (Nb passages)", "Circuit 2 - Crossfit/Hyrox (Meilleur)",
+        "Circuit 3 - Précision (Nb passages)", "Circuit 3 - Précision (Meilleur)",
+        "Circuit 4 - Suspension (Nb passages)", "Circuit 4 - Suspension (Meilleur)"
+    ]
     ws.append(headers)
 
     # Style en-têtes
@@ -284,38 +290,33 @@ def export_excel():
         number = cand[0]
         row = list(cand)
 
-        # Récup résultats circuits
         for circuit in range(1, 5):
-            if circuit == 3:
-                c.execute("SELECT time, touches FROM results WHERE candidate_number=? AND circuit=3", (number,))
-                res = c.fetchall()
-                if res:
-                    times = "\n".join([f"{int(t[0]//60):02d}:{int(t[0]%60):02d}.{int(t[0]*100%100):02d}" for t in res])
-                    touches = "\n".join([str(t[1]) for t in res])
-                else:
-                    times, touches = "", ""
-                row.extend([times, touches])
+            if circuit == 4:
+                # Circuit 4 = temps le plus grand
+                c.execute("SELECT time FROM results WHERE candidate_number=? AND circuit=? ORDER BY time DESC", (number, circuit))
             else:
-                c.execute("SELECT time FROM results WHERE candidate_number=? AND circuit=?", (number, circuit))
-                res = c.fetchall()
-                if res:
-                    times = "\n".join([f"{int(t[0]//60):02d}:{int(t[0]%60):02d}.{int(t[0]*100%100):02d}" for t in res])
-                else:
-                    times = ""
-                row.append(times)
+                # Les autres circuits = meilleur temps = temps le plus petit
+                c.execute("SELECT time FROM results WHERE candidate_number=? AND circuit=? ORDER BY time ASC", (number, circuit))
+            res = c.fetchall()
+            nb_passages = len(res)
+            if res:
+                best_time_sec = res[0][0]
+                best_time = f"{int(best_time_sec//60):02d}:{int(best_time_sec%60):02d}.{int(best_time_sec*100%100):02d}"
+            else:
+                best_time = ""
+            row.extend([nb_passages, best_time])
 
         ws.append(row)
 
-        # Appliquer style à la ligne (alternance gris clair)
+        # Alternance gris clair
         if row_index % 2 == 0:
             for col in range(1, len(headers) + 1):
                 ws.cell(row_index, col).fill = alt_fill
-
         row_index += 1
 
     conn.close()
 
-    # Ajustement auto largeur colonnes
+    # Ajustement largeur colonnes et wrap
     for col in ws.columns:
         max_length = 0
         col_letter = col[0].column_letter
@@ -323,7 +324,7 @@ def export_excel():
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
             cell.alignment = Alignment(wrapText=True, vertical="top")
-        ws.column_dimensions[col_letter].width = min(max_length + 2, 40)  # limite largeur max
+        ws.column_dimensions[col_letter].width = min(max_length + 2, 40)
 
     # Export
     output = io.BytesIO()

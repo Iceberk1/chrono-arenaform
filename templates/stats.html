@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Statistiques - Arenaform</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      color: #222;
+      margin: 0;
+      padding: 0;
+      padding-top: 120px;
+    }
+    header {
+      width: 100%;
+      background: #D63138;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      top: 0;
+      justify-content: space-between;
+      align-items: center;
+      box-sizing: border-box;
+      position: fixed;
+    }
+    header h1 {
+      font-size: 3em;
+      margin: 0;
+    }
+    .logo-box {
+      background: white;
+      padding: 5px 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .logo-box img { height: 60px; }
+
+    h2 {
+      font-size: 2.5em;
+      margin-top: 10px;
+      color: #D63138;
+      font-weight: bold;
+    }
+	
+	label {
+      font-size: 1.4em;
+      display: block;
+      margin-bottom: 10px;
+    }
+	
+    select {
+	  font-size: 1.3em;
+	  padding: 12px;
+	  margin-bottom: 20px;
+      border: 1px solid #ccc;
+	  border-radius: 8px;
+	}
+	
+    .circuit-block {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px auto;
+      width: 80%;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+      font-size: 1.2em;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #D63138;
+      color: white;
+    }
+    tr:nth-child(even) { background: #f9f9f9; }
+
+    footer {
+      position: relative;
+      width: 100%;
+      background: #D63138;
+      color: white;
+      padding: 15px 0;
+      text-align: center;
+      font-size: 1.5em;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+      margin-top: 40px;
+    }
+    footer a {
+      margin: 0 20px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+    }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-box">
+      <img src="/static/arenaform-logo.png" alt="Arenaform Logo">
+    </div>
+    <div>
+      <h1>📊 Statistiques</h1>
+    </div>
+    <div class="logo-box">
+      <img src="/static/logo-decathlon_blue_exclusion-zone.svg" alt="Decathlon Logo">
+    </div>
+  </header>
+
+  <div class="circuit-block">
+    <form method="get" action="/stats">
+      <label for="date"><strong>Choisir une date :</strong></label>
+      <select name="date" id="date" onchange="this.form.submit()">
+        {% for d in dates %}
+          <option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <div class="circuit-block">
+    <h2>Statistiques du {{ selected_date }}</h2>
+    <table>
+      <tr><th>Circuit</th><th>Nombre de temps enregistrés</th></tr>
+      <tr><td>Ninja</td><td>{{ stats_today[1] }}</td></tr>
+      <tr><td>Crossfit/Hyrox</td><td>{{ stats_today[2] }}</td></tr>
+      <tr><td>Précision</td><td>{{ stats_today[3] }}</td></tr>
+      <tr><td>Suspension</td><td>{{ stats_today[4] }}</td></tr>
+      <tr><td><strong>Total du jour</strong></td><td><strong>{{ total_today }}</strong></td></tr>
+    </table>
+  </div>
+
+  <div class="circuit-block">
+    <h2>Statistiques globales</h2>
+    <table>
+      <tr><th>Circuit</th><th>Total all time</th></tr>
+      <tr><td>Ninja</td><td>{{ stats_all[1] }}</td></tr>
+      <tr><td>Crossfit/Hyrox</td><td>{{ stats_all[2] }}</td></tr>
+      <tr><td>Précision</td><td>{{ stats_all[3] }}</td></tr>
+      <tr><td>Suspension</td><td>{{ stats_all[4] }}</td></tr>
+      <tr><td><strong>Total all time</strong></td><td><strong>{{ total_all }}</strong></td></tr>
+    </table>
+  </div>
+
+  <footer>
+    <a href="/">⬅️ Résultats</a> |
+    <a href="/chrono">⏱ Chrono</a> |
+    <a href="/add">➕ Ajouter un candidat</a>
+  </footer>
+</body>
+</html>

@@ -308,6 +308,57 @@ def export_excel():
                      download_name="candidats.xlsx",
                      as_attachment=True,
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                     
+
+# Page de stats
+@app.route("/stats")
+def stats():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    # Récupérer toutes les dates disponibles (basées sur created_at)
+    c.execute("SELECT DISTINCT DATE(created_at) FROM results ORDER BY created_at DESC")
+    dates = [row[0] for row in c.fetchall()]
+
+    # Récupérer la date sélectionnée (par défaut aujourd'hui)
+    selected_date = request.args.get("date")
+    if not selected_date:
+        c.execute("SELECT DATE('now')")
+        selected_date = c.fetchone()[0]
+
+    # Stats par circuit pour la date sélectionnée
+    stats_today = {}
+    for circuit in range(1, 5):
+        c.execute(
+            "SELECT COUNT(*) FROM results WHERE circuit=? AND DATE(created_at)=?",
+            (circuit, selected_date)
+        )
+        stats_today[circuit] = c.fetchone()[0]
+
+    # Total du jour (tous circuits confondus)
+    c.execute("SELECT COUNT(*) FROM results WHERE DATE(created_at)=?", (selected_date,))
+    total_today = c.fetchone()[0]
+
+    # Totaux all time
+    stats_all = {}
+    for circuit in range(1, 5):
+        c.execute("SELECT COUNT(*) FROM results WHERE circuit=?", (circuit,))
+        stats_all[circuit] = c.fetchone()[0]
+
+    c.execute("SELECT COUNT(*) FROM results")
+    total_all = c.fetchone()[0]
+
+    conn.close()
+
+    return render_template(
+        "stats.html",
+        dates=dates,
+        selected_date=selected_date,
+        stats_today=stats_today,
+        total_today=total_today,
+        stats_all=stats_all,
+        total_all=total_all
+    )
+
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
